@@ -66,6 +66,7 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
   });
 
   const [saleSuccessMessage, setSaleSuccessMessage] = useState('');
+  const [vatPercent, setVatPercent] = useState<string>('5');
 
   // Extract unique categories for catalog filter
   const uniqueCategories = useMemo(() => {
@@ -140,8 +141,8 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
   // Pricing calculations
   const cartTotals = useMemo(() => {
     const subtotal = cart.reduce((acc, c) => acc + (c.quantity * c.soldPrice), 0);
-    // Standard sales tax (e.g. 5% value added tax or custom flat tier, lets keep standard 5% tax or allow it to be 0 for simplicity)
-    const vatRate = 0.05; 
+    const parsedVat = parseFloat(vatPercent);
+    const vatRate = isNaN(parsedVat) || parsedVat < 0 ? 0 : parsedVat / 100;
     const taxAmount = subtotal * vatRate;
     const finalTotal = subtotal + taxAmount;
 
@@ -151,7 +152,7 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
       finalTotal,
       itemsCount: cart.reduce((acc, c) => acc + c.quantity, 0)
     };
-  }, [cart]);
+  }, [cart, vatPercent]);
 
   // Submit operations
   const handleCheckoutSubmit = (e: React.FormEvent) => {
@@ -174,6 +175,7 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
     clearCart();
     setCustomerName('');
     setNotes('');
+    setVatPercent('5');
     
     // Regenerate random sequence invoice code
     const rand = Math.floor(1000 + Math.random() * 9000);
@@ -529,11 +531,31 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
                 <span>Subtotal ({cartTotals.itemsCount} Units)</span>
                 <span className="font-mono">{currencyFormatter.format(cartTotals.subtotal)}</span>
               </div>
-              <div className="flex justify-between items-center text-xs font-sans text-slate-400">
+              <div className="flex justify-between items-center text-xs font-sans text-slate-500">
                 <span className="flex items-center gap-1">
-                  Sales Surcharge (5% VAT)
-                  <HelpCircle size={11} className="text-slate-300" title="State standard output tax markup" />
+                  VAT Rate (%)
+                  <HelpCircle size={11} className="text-slate-300" title="Customize sales tax percentage markup" />
                 </span>
+                <div className="relative w-20">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="5.0"
+                    value={vatPercent}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0 && parseFloat(val) <= 100)) {
+                        setVatPercent(val);
+                      }
+                    }}
+                    className="w-full text-right font-mono text-[11px] border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-rose-500/20 focus:border-rose-500 font-bold text-slate-800"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs font-sans text-slate-400">
+                <span>Calculated VAT ({vatPercent || '0'}%)</span>
                 <span className="font-mono">{currencyFormatter.format(cartTotals.taxAmount)}</span>
               </div>
               <div className="h-px bg-slate-100 my-1"></div>
