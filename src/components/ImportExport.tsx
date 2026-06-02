@@ -263,13 +263,23 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
       <hr className="my-8 border-slate-100" />
 
       <div className="bg-slate-50/50 rounded-lg border border-slate-200/60 p-5 font-sans">
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Globe size={14} className="text-slate-500" />
-          Production Deployment &amp; Normal Hosting Guide
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Globe size={14} className="text-slate-500" />
+            Production Deployment &amp; Normal Hosting Guide
+          </h3>
+          <a
+            href="/api/download-zip"
+            download="stockyard-hosting-bundle.zip"
+            className="self-start sm:self-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs rounded transition-all shadow-sm flex items-center gap-2 leading-none"
+          >
+            <Server size={14} />
+            Download pre-compiled ZIP
+          </a>
+        </div>
         
         <p className="text-xs text-slate-650 mb-6 leading-relaxed">
-          Because this Stockyard Solutions instance is a <strong>fully client-side Web App (React + Vite) with local database persistence</strong>, it does not require an active SQL cluster, PHP, or Node.js backend server. You can host it instantly on any traditional hosting panel (such as Apache, Nginx, or cPanel) or zero-overhead static hosts:
+          Because this Stockyard Solutions instance is a <strong>fully client-side Web App (React + Vite) with local database persistence</strong>, it does not require an active SQL cluster, PHP, or Node.js backend server. You can host it instantly on any traditional hosting panel (such as Apache, Nginx, or cPanel) or zero-overhead static hosts. Click the button above to get your hosting-ready archive directly!
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -279,7 +289,17 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
             </span>
             <span className="font-bold text-xs text-slate-800">Export ZIP Code</span>
             <span className="text-[11px] text-slate-500 leading-normal">
-              Click the settings cog in the top-right toolbar of AI Studio and choose <strong>Export to ZIP</strong> (or sync with GitHub).
+              Click the settings cog icon in the top-right toolbar of Google AI Studio and select <strong>Export to ZIP</strong>.
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
+            <span className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-[10px] select-none">
+              ✓
+            </span>
+            <span className="font-bold text-xs text-emerald-800">No Build Required!</span>
+            <span className="text-[11px] text-slate-500 leading-normal">
+              We have pre-compiled the app in the background! Inside your downloaded workspace ZIP, you will find a folder named <strong>ready_to_upload</strong>.
             </span>
           </div>
 
@@ -287,43 +307,29 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
             <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
               2
             </span>
-            <span className="font-bold text-xs text-slate-800">Build Locally</span>
+            <span className="font-bold text-xs text-slate-800">Traditional cPanel</span>
             <span className="text-[11px] text-slate-500 leading-normal">
-              Unzip the files on your computer, verify Node.js is installed locally, and run the standard build script:
+              Copy the compiled folder contents directly from that <strong>ready_to_upload</strong> directory and upload them to your cPanel host FTP (inside <code>public_html/</code>).
             </span>
-            <div className="bg-slate-900 text-slate-200 p-2 rounded text-[10px] font-mono mt-1 select-all select-none leading-relaxed">
-              npm install<br />
-              npm run build
-            </div>
           </div>
 
           <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
             <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
               3
             </span>
-            <span className="font-bold text-xs text-slate-800">Traditional cPanel</span>
-            <span className="text-[11px] text-slate-500 leading-normal">
-              Copy the compiled folder contents from the resulting <strong>dist/</strong> directory and upload them directly into your host's FTP/File Manager (inside <code>public_html/</code>).
-            </span>
-          </div>
-
-          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
-            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
-              4
-            </span>
             <span className="font-bold text-xs text-slate-800">Modern Static Hosting</span>
             <span className="text-[11px] text-slate-500 leading-normal">
-              Drag-and-drop the <strong>dist/</strong> folder directly into <strong>Netlify</strong>, <strong>Vercel</strong>, or host on <strong>GitHub Pages</strong> for free with continuous integration.
+              Or drag-and-drop that same <strong>ready_to_upload</strong> directory directly into <strong>Netlify</strong> or <strong>Vercel</strong> for free, instant global serving.
             </span>
           </div>
         </div>
 
-        <div className="mt-5 p-3.5 bg-indigo-50/50 border border-indigo-100 rounded flex gap-3 text-indigo-950 text-xs select-none">
+        <div className="mt-5 p-3.5 bg-indigo-50/50 border border-indigo-100 rounded flex gap-3 text-indigo-950 text-xs select-none animate-pulse">
           <Server size={16} className="text-indigo-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <p className="font-semibold text-xs leading-normal text-indigo-900">Why this makes hosting incredibly easy:</p>
+            <p className="font-semibold text-xs leading-normal text-indigo-900">Pre-Compiled Workspace Setup Complete:</p>
             <p className="text-[11px] text-indigo-700 mt-1 leading-normal">
-              No backend database setup stands between your static files and your active users. Product listings, categories, transactional ledger logs, search indexes, and custom margins persist locally in your browser memory context (`localStorage`). This means $0/mo server maintenance!
+              We configured <code>base: './'</code> and compiled all styles and UI logic. The folder <code>/ready_to_upload</code> at the root of your exported project ZIP is fully packed and ready to run immediately when uploaded to any server.
             </p>
           </div>
         </div>
