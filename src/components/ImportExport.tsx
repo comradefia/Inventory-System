@@ -11,7 +11,12 @@ import {
   FileSpreadsheet, 
   RefreshCcw, 
   Check, 
-  AlertTriangle 
+  AlertTriangle,
+  Server,
+  Globe,
+  Info,
+  Terminal,
+  ArrowRight
 } from 'lucide-react';
 import { InventoryItem, TransactionLog } from '../types';
 
@@ -253,6 +258,75 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
           </div>
         </div>
 
+      </div>
+
+      <hr className="my-8 border-slate-100" />
+
+      <div className="bg-slate-50/50 rounded-lg border border-slate-200/60 p-5 font-sans">
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Globe size={14} className="text-slate-500" />
+          Production Deployment &amp; Normal Hosting Guide
+        </h3>
+        
+        <p className="text-xs text-slate-650 mb-6 leading-relaxed">
+          Because this Stockyard Solutions instance is a <strong>fully client-side Web App (React + Vite) with local database persistence</strong>, it does not require an active SQL cluster, PHP, or Node.js backend server. You can host it instantly on any traditional hosting panel (such as Apache, Nginx, or cPanel) or zero-overhead static hosts:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
+            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
+              1
+            </span>
+            <span className="font-bold text-xs text-slate-800">Export ZIP Code</span>
+            <span className="text-[11px] text-slate-500 leading-normal">
+              Click the settings cog in the top-right toolbar of AI Studio and choose <strong>Export to ZIP</strong> (or sync with GitHub).
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
+            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
+              2
+            </span>
+            <span className="font-bold text-xs text-slate-800">Build Locally</span>
+            <span className="text-[11px] text-slate-500 leading-normal">
+              Unzip the files on your computer, verify Node.js is installed locally, and run the standard build script:
+            </span>
+            <div className="bg-slate-900 text-slate-200 p-2 rounded text-[10px] font-mono mt-1 select-all select-none leading-relaxed">
+              npm install<br />
+              npm run build
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
+            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
+              3
+            </span>
+            <span className="font-bold text-xs text-slate-800">Traditional cPanel</span>
+            <span className="text-[11px] text-slate-500 leading-normal">
+              Copy the compiled folder contents from the resulting <strong>dist/</strong> directory and upload them directly into your host's FTP/File Manager (inside <code>public_html/</code>).
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded border border-slate-200/50 flex flex-col gap-2">
+            <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[10px] select-none">
+              4
+            </span>
+            <span className="font-bold text-xs text-slate-800">Modern Static Hosting</span>
+            <span className="text-[11px] text-slate-500 leading-normal">
+              Drag-and-drop the <strong>dist/</strong> folder directly into <strong>Netlify</strong>, <strong>Vercel</strong>, or host on <strong>GitHub Pages</strong> for free with continuous integration.
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-5 p-3.5 bg-indigo-50/50 border border-indigo-100 rounded flex gap-3 text-indigo-950 text-xs select-none">
+          <Server size={16} className="text-indigo-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-xs leading-normal text-indigo-900">Why this makes hosting incredibly easy:</p>
+            <p className="text-[11px] text-indigo-700 mt-1 leading-normal">
+              No backend database setup stands between your static files and your active users. Product listings, categories, transactional ledger logs, search indexes, and custom margins persist locally in your browser memory context (`localStorage`). This means $0/mo server maintenance!
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
