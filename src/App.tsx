@@ -14,7 +14,8 @@ import {
   CheckCircle2, 
   ShieldAlert,
   Info,
-  Tag
+  Tag,
+  ShoppingCart
 } from 'lucide-react';
 import { InventoryItem, TransactionLog, FilterOptions } from './types';
 import { INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES } from './sampleData';
@@ -24,6 +25,7 @@ import { TransactionHistory } from './components/TransactionHistory';
 import { ItemForm } from './components/ItemForm';
 import { ImportExport } from './components/ImportExport';
 import { CategoryManager } from './components/CategoryManager';
+import { SalesManager } from './components/SalesManager';
 
 const STORAGE_KEYS = {
   ITEMS: 'inventory_app_items_v1',
@@ -37,8 +39,8 @@ export default function App() {
   const [logs, setLogs] = useState<TransactionLog[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   
-  // Tab views: 'catalog', 'audit', 'integration', 'categories'
-  const [activeTab, setActiveTab] = useState<'catalog' | 'audit' | 'integration' | 'categories'>('catalog');
+  // Tab views: 'catalog', 'audit', 'integration', 'categories', 'sales'
+  const [activeTab, setActiveTab] = useState<'catalog' | 'audit' | 'integration' | 'categories' | 'sales'>('catalog');
   
   // Form modal triggers
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -449,6 +451,52 @@ export default function App() {
     showToast('info', `Category "${catName}" deleted. ${affectedCount} items reassigned to "Other".`);
   };
 
+  // 9. Records Sales dispatch transaction in batch
+  const handleRecordSale = (
+    cart: { itemId: string; quantity: number; soldPrice: number }[],
+    customerName: string,
+    notes: string,
+    invoiceRef: string
+  ) => {
+    const isoNow = new Date().toISOString();
+    let updatedLogs = [...logs];
+
+    // Determine updated item entries mapping
+    const updatedItems = items.map(item => {
+      const saleLineItem = cart.find(c => c.itemId === item.id);
+      if (saleLineItem) {
+        const remainingStock = Math.max(0, item.stock - saleLineItem.quantity);
+        
+        // Log individual item sales reduction in ledger
+        const logId = `tx-${Date.now()}-${item.itemId}`;
+        const saleLog: TransactionLog = {
+          id: logId,
+          itemId: item.id,
+          itemName: item.name,
+          sku: item.sku,
+          type: 'REMOVE',
+          quantityChange: -saleLineItem.quantity,
+          newStock: remainingStock,
+          reason: `Sale Dispatched (Receipt Ref: ${invoiceRef}). Sold ${saleLineItem.quantity} qty to "${customerName}" for $${saleLineItem.soldPrice.toFixed(2)}/unit. ${notes ? 'Notes: ' + notes : ''}`,
+          timestamp: isoNow
+        };
+        updatedLogs = [saleLog, ...updatedLogs];
+
+        return {
+          ...item,
+          stock: remainingStock,
+          updatedAt: isoNow
+        };
+      }
+      return item;
+    });
+
+    setItems(updatedItems);
+    setLogs(updatedLogs);
+    saveStateToStorage(updatedItems, updatedLogs);
+    showToast('success', `Sale registered completely! Invoice ${invoiceRef} recorded.`);
+  };
+
   // --- DERIVED METRICS ---
   const criticalLowAlerts = useMemo(() => {
     return items.filter(x => x.stock > 0 && x.stock <= x.minThreshold);
@@ -546,6 +594,22 @@ export default function App() {
                 >
                   <Layers size={15} />
                   <span>Catalogue Listing</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('sales');
+                  }}
+                  className={`flex items-center justify-between px-4 py-3 rounded-md transition-colors text-xs font-semibold select-none cursor-pointer ${
+                    activeTab === 'sales'
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/50'
+                      : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShoppingCart size={15} />
+                    <span>Submit Sales</span>
+                  </div>
                 </button>
 
                 <button
@@ -737,6 +801,16 @@ export default function App() {
                 onAddCategory={handleAddCategory}
                 onRenameCategory={handleRenameCategory}
                 onDeleteCategory={handleDeleteCategory}
+              />
+            </div>
+          )}
+
+          {/* TAB CONTENT: SALES DISPATCH PORTAL */}
+          {activeTab === 'sales' && (
+            <div className="animate-fade-in">
+              <SalesManager
+                items={items}
+                onSubmitSale={handleRecordSale}
               />
             </div>
           )}
