@@ -15,6 +15,11 @@ interface CategoryManagerProps {
   onDeleteCategory: (name: string) => void;
 }
 
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+
 export function CategoryManager({
   categories,
   items,
@@ -211,8 +216,10 @@ export function CategoryManager({
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase">Category Name</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-center w-32">Items Count</th>
-                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-right w-44">Operations</th>
+                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-center w-28">Items Count</th>
+                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-right w-36">Avg. Item Cost</th>
+                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-right w-36">Total Value</th>
+                  <th className="py-3 px-4 text-xs font-semibold text-slate-500 uppercase text-right w-32">Operations</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -220,6 +227,18 @@ export function CategoryManager({
                   const isEditing = editingCat === catName;
                   const itemCount = getCatItemCount(catName);
                   const isReserved = catName.toLowerCase() === 'other';
+
+                  // Calculate pricing and cost analytics for this specific category
+                  const categoryItems = items.filter(
+                    (item) => item.category.toLowerCase() === catName.toLowerCase()
+                  );
+                  const averageItemCost = categoryItems.length > 0
+                    ? categoryItems.reduce((sum, item) => sum + item.price, 0) / categoryItems.length
+                    : 0;
+                  const totalStockCostValue = categoryItems.reduce(
+                    (sum, item) => sum + item.price * item.stock,
+                    0
+                  );
 
                   return (
                     <tr key={catName} className="hover:bg-slate-50/20 group text-slate-700 transition-colors">
@@ -262,6 +281,22 @@ export function CategoryManager({
                             : 'bg-slate-100 text-slate-400'
                         }`}>
                           {itemCount}
+                        </span>
+                      </td>
+
+                      {/* Average Item Cost */}
+                      <td className="py-3.5 px-4 text-right">
+                        <span className="font-mono text-xs text-slate-600 font-medium">
+                          {currencyFormatter.format(averageItemCost)}
+                        </span>
+                      </td>
+
+                      {/* Total Category stock valuation */}
+                      <td className="py-3.5 px-4 text-right">
+                        <span className={`font-mono text-xs font-bold ${
+                          totalStockCostValue > 0 ? 'text-indigo-600' : 'text-slate-400'
+                        }`}>
+                          {currencyFormatter.format(totalStockCostValue)}
                         </span>
                       </td>
 
