@@ -13,28 +13,32 @@ import {
   X, 
   CheckCircle2, 
   ShieldAlert,
-  Info
+  Info,
+  Tag
 } from 'lucide-react';
 import { InventoryItem, TransactionLog, FilterOptions } from './types';
-import { INITIAL_ITEMS, INITIAL_LOGS } from './sampleData';
+import { INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES } from './sampleData';
 import { DashboardStats } from './components/DashboardStats';
 import { InventoryTable } from './components/InventoryTable';
 import { TransactionHistory } from './components/TransactionHistory';
 import { ItemForm } from './components/ItemForm';
 import { ImportExport } from './components/ImportExport';
+import { CategoryManager } from './components/CategoryManager';
 
 const STORAGE_KEYS = {
   ITEMS: 'inventory_app_items_v1',
-  LOGS: 'inventory_app_logs_v1'
+  LOGS: 'inventory_app_logs_v1',
+  CATEGORIES: 'inventory_app_categories_v1'
 };
 
 export default function App() {
   // --- STATE ---
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [logs, setLogs] = useState<TransactionLog[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   
-  // Tab views: 'catalog', 'audit', 'integration'
-  const [activeTab, setActiveTab] = useState<'catalog' | 'audit' | 'integration'>('catalog');
+  // Tab views: 'catalog', 'audit', 'integration', 'categories'
+  const [activeTab, setActiveTab] = useState<'catalog' | 'audit' | 'integration' | 'categories'>('catalog');
   
   // Form modal triggers
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -68,6 +72,7 @@ export default function App() {
     try {
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
       const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+      const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
 
       if (storedItems) {
         setItems(JSON.parse(storedItems));
@@ -84,18 +89,35 @@ export default function App() {
         setLogs(INITIAL_LOGS);
         localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(INITIAL_LOGS));
       }
+
+      if (storedCategories) {
+        setCategories(JSON.parse(storedCategories));
+      } else {
+        // First-run: hydrate with preset categories
+        setCategories(PRESET_CATEGORIES);
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(PRESET_CATEGORIES));
+      }
     } catch (e) {
       showToast('error', 'Browser storage failed to initialize. Reverting to session state.');
       setItems(INITIAL_ITEMS);
       setLogs(INITIAL_LOGS);
+      setCategories(PRESET_CATEGORIES);
     }
   }, []);
 
   // --- PERSISTENCE SYNCS ---
-  const saveStateToStorage = (updatedItems: InventoryItem[], updatedLogs: TransactionLog[]) => {
+  const saveStateToStorage = (
+    updatedItems: InventoryItem[],
+    updatedLogs: TransactionLog[],
+    updatedCategories?: string[]
+  ) => {
     try {
       localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedItems));
       localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(updatedLogs));
+      localStorage.setItem(
+        STORAGE_KEYS.CATEGORIES,
+        JSON.stringify(updatedCategories || categories)
+      );
     } catch (e) {
       showToast('error', 'Storage exceeds quota limit. Image uploads may be too large.');
     }
@@ -295,17 +317,136 @@ export default function App() {
     }
     setItems(INITIAL_ITEMS);
     setLogs(INITIAL_LOGS);
+    setCategories(PRESET_CATEGORIES);
     setFocusedLogSku(undefined);
-    saveStateToStorage(INITIAL_ITEMS, INITIAL_LOGS);
+    saveStateToStorage(INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES);
     showToast('success', 'Sandbox replenished. Mock items and logs seeded.');
   };
 
   // 7. Recover from JSON backup import
-  const handleImportJsonBackup = (importedItems: InventoryItem[], importedLogs: TransactionLog[]) => {
+  const handleImportJsonBackup = (
+    importedItems: InventoryItem[],
+    importedLogs: TransactionLog[],
+    importedCategories?: string[]
+  ) => {
     setItems(importedItems);
     setLogs(importedLogs);
-    saveStateToStorage(importedItems, importedLogs);
-    showToast('success', 'Data recovered: database backup restored successfully.');
+    
+    let finalCategories = categories;
+    if (importedCategories && importedCategories.length > 0) {
+      const merged = Array.from(new Set([...importedCategories, ...categories]));
+      finalCategories = merged;
+      setCategories(merged);
+    }
+    
+    saveStateToStorage(importedItems, importedLogs, finalCategories);
+    showToast('success', `Data recovered: database backup restored successfully.`);
+  };
+
+  // 8. Custom Category Handlers
+  const handleAddCategory = (name: string): boolean => {
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+    
+    if (categories.some(cat => cat.toLowerCase() === trimmed.toLowerCase())) {
+      showToast('error', `A category named "${trimmed}" already exists.`);
+      return false;
+    }
+
+    const updatedCategories = [...categories, trimmed];
+    setCategories(updatedCategories);
+    saveStateToStorage(items, logs, updatedCategories);
+    showToast('success', `Category "${trimmed}" successfully created.`);
+    return true;
+  };
+
+  const handleRenameCategory = (oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed || oldName.toLowerCase() === 'other') return;
+
+    const updatedCategories = categories.map(cat => 
+      cat.toLowerCase() === oldName.toLowerCase() ? trimmed : cat
+    );
+
+    const updatedItems = items.map(item => {
+      if (item.category.toLowerCase() === oldName.toLowerCase()) {
+        return {
+          ...item,
+          category: trimmed,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return item;
+    });
+
+    const isoNow = new Date().toISOString();
+    const affectedCount = items.filter(item => item.category.toLowerCase() === oldName.toLowerCase()).length;
+    let updatedLogs = [...logs];
+
+    if (affectedCount > 0) {
+      const logId = `tx-${Date.now()}`;
+      const renameLog: TransactionLog = {
+        id: logId,
+        itemId: 'category-system',
+        itemName: `Rename: "${oldName}" → "${trimmed}"`,
+        sku: 'SYSTEM-CAT',
+        type: 'UPDATE',
+        quantityChange: 0,
+        newStock: 0,
+        reason: `System classification change: Reclassified ${affectedCount} items from "${oldName}" category to "${trimmed}".`,
+        timestamp: isoNow
+      };
+      updatedLogs = [renameLog, ...logs];
+    }
+
+    setCategories(updatedCategories);
+    setItems(updatedItems);
+    setLogs(updatedLogs);
+    saveStateToStorage(updatedItems, updatedLogs, updatedCategories);
+    showToast('success', `Successfully renamed category to "${trimmed}".`);
+  };
+
+  const handleDeleteCategory = (catName: string) => {
+    if (catName.toLowerCase() === 'other') return;
+
+    const updatedCategories = categories.filter(cat => cat.toLowerCase() !== catName.toLowerCase());
+
+    const updatedItems = items.map(item => {
+      if (item.category.toLowerCase() === catName.toLowerCase()) {
+        return {
+          ...item,
+          category: 'Other',
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return item;
+    });
+
+    const isoNow = new Date().toISOString();
+    const affectedCount = items.filter(item => item.category.toLowerCase() === catName.toLowerCase()).length;
+    let updatedLogs = [...logs];
+
+    if (affectedCount > 0) {
+      const logId = `tx-${Date.now()}`;
+      const deleteLog: TransactionLog = {
+        id: logId,
+        itemId: 'category-system',
+        itemName: `Deleted Category: "${catName}"`,
+        sku: 'SYSTEM-CAT',
+        type: 'UPDATE',
+        quantityChange: 0,
+        newStock: 0,
+        reason: `System database optimization: Purged category "${catName}" and reassigned its ${affectedCount} active items to "Other" tag.`,
+        timestamp: isoNow
+      };
+      updatedLogs = [deleteLog, ...logs];
+    }
+
+    setCategories(updatedCategories);
+    setItems(updatedItems);
+    setLogs(updatedLogs);
+    saveStateToStorage(updatedItems, updatedLogs, updatedCategories);
+    showToast('info', `Category "${catName}" deleted. ${affectedCount} items reassigned to "Other".`);
   };
 
   // --- DERIVED METRICS ---
@@ -405,6 +546,27 @@ export default function App() {
                 >
                   <Layers size={15} />
                   <span>Catalogue Listing</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('categories');
+                  }}
+                  className={`flex items-center justify-between px-4 py-3 rounded-md transition-colors text-xs font-semibold select-none cursor-pointer ${
+                    activeTab === 'categories'
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/50'
+                      : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Tag size={15} />
+                    <span>Manage Categories</span>
+                  </div>
+                  {categories.length > 0 && (
+                    <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-mono font-bold rounded">
+                      {categories.length}
+                    </span>
+                  )}
                 </button>
                 
                 <button
@@ -536,6 +698,7 @@ export default function App() {
                   <ItemForm
                     initialItem={editingItem}
                     existingItems={items}
+                    categories={categories}
                     onSubmit={(item) => {
                       if (editingItem) {
                         handleUpdateItem(item);
@@ -554,12 +717,26 @@ export default function App() {
               {/* Master Inventory Listing Grid */}
               <InventoryTable
                 items={items}
+                categories={categories}
                 filters={filters}
                 setFilters={setFilters}
                 onEditItem={handleTriggerEdit}
                 onDeleteItem={handleDeleteItem}
                 onAdjustStock={handleAdjustStock}
                 onViewHistory={handleViewLedgerForSku}
+              />
+            </div>
+          )}
+
+          {/* TAB CONTENT: CATEGORIES WORKSPACE */}
+          {activeTab === 'categories' && (
+            <div className="animate-fade-in">
+              <CategoryManager
+                categories={categories}
+                items={items}
+                onAddCategory={handleAddCategory}
+                onRenameCategory={handleRenameCategory}
+                onDeleteCategory={handleDeleteCategory}
               />
             </div>
           )}
@@ -582,6 +759,7 @@ export default function App() {
               <ImportExport
                 items={items}
                 logs={logs}
+                categories={categories}
                 onImportData={handleImportJsonBackup}
                 onResetDemo={handleTriggerRebootSandbox}
               />

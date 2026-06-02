@@ -23,10 +23,10 @@ import {
   X
 } from 'lucide-react';
 import { InventoryItem, FilterOptions, SortField, SortOrder } from '../types';
-import { PRESET_CATEGORIES } from '../sampleData';
 
 interface InventoryTableProps {
   items: InventoryItem[];
+  categories: string[];
   filters: FilterOptions;
   setFilters: (filters: FilterOptions) => void;
   onEditItem: (item: InventoryItem) => void;
@@ -37,6 +37,7 @@ interface InventoryTableProps {
 
 export function InventoryTable({
   items,
+  categories,
   filters,
   setFilters,
   onEditItem,
@@ -85,7 +86,7 @@ export function InventoryTable({
 
   // Categories helper to extract unique categories from actual current items
   const uniqueCategories = Array.from(new Set([
-    ...PRESET_CATEGORIES,
+    ...categories,
     ...items.map(item => item.category)
   ])).filter(cat => cat !== 'Other');
   

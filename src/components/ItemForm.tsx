@@ -6,11 +6,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, RefreshCw, FileText, Check, AlertCircle } from 'lucide-react';
 import { InventoryItem } from '../types';
-import { PRESET_CATEGORIES } from '../sampleData';
 
 interface ItemFormProps {
   initialItem?: InventoryItem;
   existingItems: InventoryItem[];
+  categories: string[];
   onSubmit: (item: Omit<InventoryItem, 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
 }
@@ -24,12 +24,12 @@ const SAMPLE_IMAGE_PRESETS = [
   { name: 'Devices', url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&q=80&w=400' },
 ];
 
-export function ItemForm({ initialItem, existingItems, onSubmit, onCancel }: ItemFormProps) {
+export function ItemForm({ initialItem, existingItems, categories, onSubmit, onCancel }: ItemFormProps) {
   const isEditing = !!initialItem;
 
   const [name, setName] = useState(initialItem?.name || '');
   const [sku, setSku] = useState(initialItem?.sku || '');
-  const [category, setCategory] = useState(initialItem?.category || PRESET_CATEGORIES[0]);
+  const [category, setCategory] = useState(initialItem?.category || categories[0] || 'Other');
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [price, setPrice] = useState(initialItem?.price !== undefined ? String(initialItem.price) : '');
@@ -272,7 +272,7 @@ export function ItemForm({ initialItem, existingItems, onSubmit, onCancel }: Ite
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full text-sm border border-slate-200 rounded-lg px-3.5 py-2.5 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors"
                 >
-                  {PRESET_CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
                     </option>

@@ -23,11 +23,12 @@ import { InventoryItem, TransactionLog } from '../types';
 interface ImportExportProps {
   items: InventoryItem[];
   logs: TransactionLog[];
-  onImportData: (items: InventoryItem[], logs: TransactionLog[]) => void;
+  categories: string[];
+  onImportData: (items: InventoryItem[], logs: TransactionLog[], categories?: string[]) => void;
   onResetDemo: () => void;
 }
 
-export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportExportProps) {
+export function ImportExport({ items, logs, categories, onImportData, onResetDemo }: ImportExportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -39,7 +40,8 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
         app: 'inventory-and-stock-tracker',
         exportedAt: new Date().toISOString(),
         items,
-        logs
+        logs,
+        categories
       };
       
       const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
@@ -118,8 +120,12 @@ export function ImportExport({ items, logs, onImportData, onResetDemo }: ImportE
           throw new Error('No valid SKU products were parsed from this import template.');
         }
 
-        onImportData(validItems, validLogs);
-        triggerSuccess(`Database recovered: ${validItems.length} items and ${validLogs.length} activity logs added.`);
+        const validCategories: string[] = Array.isArray(payload.categories)
+          ? payload.categories.filter((cat: any) => typeof cat === 'string')
+          : [];
+
+        onImportData(validItems, validLogs, validCategories.length > 0 ? validCategories : undefined);
+        triggerSuccess(`Database recovered: ${validItems.length} items, ${validLogs.length} activity logs, and ${validCategories.length} categories added.`);
         
         // Reset file input value
         if (fileInputRef.current) fileInputRef.current.value = '';
