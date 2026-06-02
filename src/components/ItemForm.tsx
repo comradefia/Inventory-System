@@ -8,6 +8,7 @@ import { Upload, X, RefreshCw, FileText, Check, AlertCircle } from 'lucide-react
 import { InventoryItem } from '../types';
 
 interface ItemFormProps {
+  key?: string;
   initialItem?: InventoryItem;
   existingItems: InventoryItem[];
   categories: string[];
@@ -33,7 +34,7 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [price, setPrice] = useState(initialItem?.price !== undefined ? String(initialItem.price) : '');
-  const [cost, setCost] = useState(initialItem?.cost !== undefined ? String(initialItem.cost) : '');
+  const [cost, setCost] = useState(initialItem?.cost !== undefined ? String(initialItem.cost) : (isEditing ? '0' : ''));
   const [stock, setStock] = useState(initialItem?.stock !== undefined ? String(initialItem.stock) : '');
   const [minThreshold, setMinThreshold] = useState(initialItem?.minThreshold !== undefined ? String(initialItem.minThreshold) : '5');
   const [description, setDescription] = useState(initialItem?.description || '');
@@ -148,7 +149,7 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
     const parsedPrice = parseFloat(price);
     if (isNaN(parsedPrice) || parsedPrice < 0) return;
 
-    const parsedCost = parseFloat(cost);
+    const parsedCost = cost.trim() === '' ? 0 : parseFloat(cost);
     if (isNaN(parsedCost) || parsedCost < 0) return;
 
     const parsedStock = parseInt(stock, 10);

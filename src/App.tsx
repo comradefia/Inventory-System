@@ -195,7 +195,13 @@ export default function App() {
     if (originalItem.name !== updatedItem.name) auditNotes.push(`Name altered from "${originalItem.name}"`);
     if (originalItem.sku !== updatedItem.sku) auditNotes.push(`SKU key renamed from "${originalItem.sku}" to "${updatedItem.sku}"`);
     if (originalItem.price !== updatedItem.price) auditNotes.push(`Price adjusted from $${originalItem.price.toFixed(2)} to $${updatedItem.price.toFixed(2)}`);
-    if (originalItem.cost !== updatedItem.cost) auditNotes.push(`Cost changed from $${originalItem.cost.toFixed(2)} to $${updatedItem.cost.toFixed(2)}`);
+    
+    const oldCost = originalItem.cost !== undefined ? originalItem.cost : 0;
+    const newCost = updatedItem.cost !== undefined ? updatedItem.cost : 0;
+    if (oldCost !== newCost) {
+      auditNotes.push(`Cost changed from $${oldCost.toFixed(2)} to $${newCost.toFixed(2)}`);
+    }
+    
     if (originalItem.category !== updatedItem.category) auditNotes.push(`Reassigned category from [${originalItem.category}] to [${updatedItem.category}]`);
     
     // Check if stock was modified manually via form
@@ -761,6 +767,7 @@ export default function App() {
               {isFormOpen && (
                 <div className="border border-indigo-100 bg-white p-1 rounded-lg shadow-sm">
                   <ItemForm
+                    key={editingItem?.id || 'new'}
                     initialItem={editingItem}
                     existingItems={items}
                     categories={categories}
