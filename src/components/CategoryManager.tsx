@@ -233,10 +233,10 @@ export function CategoryManager({
                     (item) => item.category.toLowerCase() === catName.toLowerCase()
                   );
                   const averageItemCost = categoryItems.length > 0
-                    ? categoryItems.reduce((sum, item) => sum + item.price, 0) / categoryItems.length
+                    ? categoryItems.reduce((sum, item) => sum + (item.cost !== undefined ? item.cost : item.price), 0) / categoryItems.length
                     : 0;
                   const totalStockCostValue = categoryItems.reduce(
-                    (sum, item) => sum + item.price * item.stock,
+                    (sum, item) => sum + (item.cost !== undefined ? item.cost : item.price) * item.stock,
                     0
                   );
 

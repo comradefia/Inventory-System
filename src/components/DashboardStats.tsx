@@ -16,6 +16,7 @@ export function DashboardStats({ items }: DashboardStatsProps) {
   const totalItems = items.length;
   
   const totalValue = items.reduce((sum, item) => sum + (item.price * item.stock), 0);
+  const totalCostValue = items.reduce((sum, item) => sum + ((item.cost !== undefined ? item.cost : item.price) * item.stock), 0);
   
   const outOfStockCount = items.filter(item => item.stock <= 0).length;
   
@@ -27,6 +28,15 @@ export function DashboardStats({ items }: DashboardStatsProps) {
     style: 'currency',
     currency: 'USD',
   });
+
+  const percentFormatter = new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
+  const potentialMarkupValue = totalValue - totalCostValue;
+  const grossProfitMargin = totalValue > 0 ? potentialMarkupValue / totalValue : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -50,8 +60,8 @@ export function DashboardStats({ items }: DashboardStatsProps) {
 
       {/* Total Inventory Value */}
       <div id="stat-total-value" className="bg-white rounded-xl border border-slate-100 p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-200">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-medium text-slate-500 font-sans">Asset Valuation</span>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-slate-500 font-sans">Asset Valuation (Retail)</span>
           <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
             <DollarSign size={20} />
           </div>
@@ -61,9 +71,15 @@ export function DashboardStats({ items }: DashboardStatsProps) {
             {currencyFormatter.format(totalValue)}
           </span>
         </div>
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 font-medium font-sans">
-          <ArrowUpRight size={14} className="inline-block" />
-          <span>Sum of unit prices × stock levels</span>
+        <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-col gap-1 text-[11px] text-slate-500 font-sans">
+          <div className="flex justify-between items-center">
+            <span>Capital Invested (Cost):</span>
+            <span className="font-mono font-medium text-slate-700">{currencyFormatter.format(totalCostValue)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>Potential Margin:</span>
+            <span className="font-mono font-semibold text-indigo-600">{percentFormatter.format(grossProfitMargin)}</span>
+          </div>
         </div>
       </div>
 

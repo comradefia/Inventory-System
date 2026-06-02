@@ -9,6 +9,7 @@ export interface InventoryItem {
   sku: string;
   category: string;
   price: number;
+  cost: number;
   stock: number;
   minThreshold: number; // Low stock alert threshold
   description: string;

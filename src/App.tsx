@@ -195,6 +195,7 @@ export default function App() {
     if (originalItem.name !== updatedItem.name) auditNotes.push(`Name altered from "${originalItem.name}"`);
     if (originalItem.sku !== updatedItem.sku) auditNotes.push(`SKU key renamed from "${originalItem.sku}" to "${updatedItem.sku}"`);
     if (originalItem.price !== updatedItem.price) auditNotes.push(`Price adjusted from $${originalItem.price.toFixed(2)} to $${updatedItem.price.toFixed(2)}`);
+    if (originalItem.cost !== updatedItem.cost) auditNotes.push(`Cost changed from $${originalItem.cost.toFixed(2)} to $${updatedItem.cost.toFixed(2)}`);
     if (originalItem.category !== updatedItem.category) auditNotes.push(`Reassigned category from [${originalItem.category}] to [${updatedItem.category}]`);
     
     // Check if stock was modified manually via form

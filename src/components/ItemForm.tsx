@@ -33,6 +33,7 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [price, setPrice] = useState(initialItem?.price !== undefined ? String(initialItem.price) : '');
+  const [cost, setCost] = useState(initialItem?.cost !== undefined ? String(initialItem.cost) : '');
   const [stock, setStock] = useState(initialItem?.stock !== undefined ? String(initialItem.stock) : '');
   const [minThreshold, setMinThreshold] = useState(initialItem?.minThreshold !== undefined ? String(initialItem.minThreshold) : '5');
   const [description, setDescription] = useState(initialItem?.description || '');
@@ -147,6 +148,9 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
     const parsedPrice = parseFloat(price);
     if (isNaN(parsedPrice) || parsedPrice < 0) return;
 
+    const parsedCost = parseFloat(cost);
+    if (isNaN(parsedCost) || parsedCost < 0) return;
+
     const parsedStock = parseInt(stock, 10);
     if (isNaN(parsedStock) || parsedStock < 0) return;
 
@@ -163,6 +167,7 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
       sku: sku.trim().toUpperCase(),
       category: finalCategory,
       price: parsedPrice,
+      cost: parsedCost,
       stock: parsedStock,
       minThreshold: parsedThreshold,
       description: description.trim(),
@@ -291,7 +296,7 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
             </div>
 
             {/* Financial & Quantities */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Price */}
               <div>
                 <label htmlFor="prod-price" className="block text-xs font-semibold text-slate-700 font-sans mb-1.5 uppercase tracking-wider">
@@ -306,6 +311,24 @@ export function ItemForm({ initialItem, existingItems, categories, onSubmit, onC
                   placeholder="0.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-colors font-mono"
+                />
+              </div>
+
+              {/* Cost */}
+              <div>
+                <label htmlFor="prod-cost" className="block text-xs font-semibold text-slate-700 font-sans mb-1.5 uppercase tracking-wider">
+                  Cost ($) *
+                </label>
+                <input
+                  id="prod-cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  placeholder="0.00"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
                   className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 transition-colors font-mono"
                 />
               </div>

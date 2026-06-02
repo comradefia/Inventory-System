@@ -295,6 +295,9 @@ export function InventoryTable({
                       )}
                     </span>
                   </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold text-slate-500 font-sans uppercase select-none">
+                    Unit Cost
+                  </th>
                   <th onClick={() => handleSort('stock')} className="py-3.5 px-4 text-xs font-semibold text-slate-500 font-sans uppercase cursor-pointer select-none group text-right">
                     <span className="flex items-center gap-1.5 justify-end">
                       Stock Level
@@ -366,8 +369,13 @@ export function InventoryTable({
                       </td>
 
                       {/* Unit Price */}
-                      <td className="py-4 px-4 font-mono text-xs text-slate-600 font-medium">
+                      <td className="py-4 px-4 font-mono text-xs text-slate-600 font-semibold">
                         {currencyFormatter.format(item.price)}
+                      </td>
+
+                      {/* Unit Cost */}
+                      <td className="py-4 px-4 font-mono text-xs text-slate-500">
+                        {item.cost !== undefined ? currencyFormatter.format(item.cost) : '—'}
                       </td>
 
                       {/* Stock Badges */}
@@ -517,9 +525,17 @@ export function InventoryTable({
                 {/* Pricing & Stock adjustments layout */}
                 <div className="mt-5 pt-3.5 border-t border-slate-100">
                   <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-sans uppercase">Unit Pricing</p>
-                      <p className="text-sm font-bold font-mono text-slate-900 mt-0.5">{currencyFormatter.format(item.price)}</p>
+                    <div className="flex gap-4">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-sans uppercase">Price (RTL)</p>
+                        <p className="text-sm font-bold font-mono text-slate-900 mt-0.5">{currencyFormatter.format(item.price)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-sans uppercase">Cost (ACQ)</p>
+                        <p className="text-sm font-semibold font-mono text-slate-500 mt-0.5">
+                          {item.cost !== undefined ? currencyFormatter.format(item.cost) : '—'}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-slate-400 font-sans uppercase">Current Stock</p>
