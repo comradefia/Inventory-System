@@ -37,7 +37,8 @@ interface SalesManagerProps {
     cart: { itemId: string; quantity: number; soldPrice: number }[],
     customerName: string,
     notes: string,
-    invoiceRef: string
+    invoiceRef: string,
+    vatPercent: number
   ) => void;
 }
 
@@ -166,7 +167,10 @@ export function SalesManager({ items, onSubmitSale }: SalesManagerProps) {
       soldPrice: c.soldPrice
     }));
 
-    onSubmitSale(submissionCart, customerName.trim(), notes.trim(), invoiceRefCode);
+    const parsedVat = parseFloat(vatPercent);
+    const finalVatPercent = isNaN(parsedVat) || parsedVat < 0 ? 0 : parsedVat;
+
+    onSubmitSale(submissionCart, customerName.trim(), notes.trim(), invoiceRefCode, finalVatPercent);
     
     // Set a neat success overlay
     setSaleSuccessMessage(`Invoice ${invoiceRefCode} registered! $${cartTotals.finalTotal.toFixed(2)} recorded in revenues.`);

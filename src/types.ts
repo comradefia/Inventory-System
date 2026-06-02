@@ -49,3 +49,25 @@ export interface FilterOptions {
   sortBy: SortField;
   sortOrder: SortOrder;
 }
+
+export interface ReceiptItem {
+  itemId: string;
+  itemName: string;
+  sku: string;
+  quantity: number;
+  soldPrice: number;
+}
+
+export interface SaleReceipt {
+  id: string;
+  invoiceRef: string;
+  customerName: string;
+  notes: string;
+  vatPercent: number;
+  subtotal: number;
+  taxAmount: number;
+  finalTotal: number;
+  items: ReceiptItem[];
+  timestamp: string;
+}
+

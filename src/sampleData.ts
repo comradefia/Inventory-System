@@ -134,3 +134,56 @@ export const PRESET_CATEGORIES = [
   'Food & Beverage',
   'Other'
 ];
+
+import { SaleReceipt } from './types';
+
+export const INITIAL_RECEIPTS: SaleReceipt[] = [
+  {
+    id: 'rcpt-1',
+    invoiceRef: 'INV-202606-4819',
+    customerName: 'Acme Laboratories Inc.',
+    notes: 'Bulk order for office equipment upgrade.',
+    vatPercent: 5,
+    subtotal: 3198.00,
+    taxAmount: 159.90,
+    finalTotal: 3357.90,
+    items: [
+      {
+        itemId: 'item-1',
+        itemName: 'Retina Studio Display Pro',
+        sku: 'DISP-STUDIO-5K',
+        quantity: 2,
+        soldPrice: 1599.00
+      }
+    ],
+    timestamp: '2026-06-01T14:45:00Z'
+  },
+  {
+    id: 'rcpt-2',
+    invoiceRef: 'INV-202606-9021',
+    customerName: 'Sarah Jenkins',
+    notes: 'In-store credit card payment.',
+    vatPercent: 5,
+    subtotal: 147.98,
+    taxAmount: 7.40,
+    finalTotal: 155.38,
+    items: [
+      {
+        itemId: 'item-3',
+        itemName: 'Super-Charge USB-C Hub (8-in-1)',
+        sku: 'HUB-USBC-8P',
+        quantity: 1,
+        soldPrice: 79.99
+      },
+      {
+        itemId: 'item-5',
+        itemName: 'Stainless Steel Flask 1.2L',
+        sku: 'FLSK-SS-1200',
+        quantity: 2,
+        soldPrice: 34.00
+      }
+    ],
+    timestamp: '2026-06-02T02:10:00Z'
+  }
+];
+

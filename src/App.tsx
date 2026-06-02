@@ -15,10 +15,12 @@ import {
   ShieldAlert,
   Info,
   Tag,
-  ShoppingCart
+  ShoppingCart,
+  Receipt,
+  BarChart3
 } from 'lucide-react';
-import { InventoryItem, TransactionLog, FilterOptions } from './types';
-import { INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES } from './sampleData';
+import { InventoryItem, TransactionLog, FilterOptions, SaleReceipt } from './types';
+import { INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES, INITIAL_RECEIPTS } from './sampleData';
 import { DashboardStats } from './components/DashboardStats';
 import { InventoryTable } from './components/InventoryTable';
 import { TransactionHistory } from './components/TransactionHistory';
@@ -26,11 +28,14 @@ import { ItemForm } from './components/ItemForm';
 import { ImportExport } from './components/ImportExport';
 import { CategoryManager } from './components/CategoryManager';
 import { SalesManager } from './components/SalesManager';
+import { ReceiptsManager } from './components/ReceiptsManager';
+import { FinanceDashboard } from './components/FinanceDashboard';
 
 const STORAGE_KEYS = {
   ITEMS: 'inventory_app_items_v1',
   LOGS: 'inventory_app_logs_v1',
-  CATEGORIES: 'inventory_app_categories_v1'
+  CATEGORIES: 'inventory_app_categories_v1',
+  RECEIPTS: 'inventory_app_receipts_v1'
 };
 
 export default function App() {
@@ -38,9 +43,10 @@ export default function App() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [logs, setLogs] = useState<TransactionLog[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [receipts, setReceipts] = useState<SaleReceipt[]>([]);
   
-  // Tab views: 'catalog', 'audit', 'integration', 'categories', 'sales'
-  const [activeTab, setActiveTab] = useState<'catalog' | 'audit' | 'integration' | 'categories' | 'sales'>('catalog');
+  // Tab views: 'dashboard', 'catalog', 'audit', 'integration', 'categories', 'sales', 'receipts'
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'catalog' | 'audit' | 'integration' | 'categories' | 'sales' | 'receipts'>('dashboard');
   
   // Form modal triggers
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -75,6 +81,7 @@ export default function App() {
       const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
       const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
       const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+      const storedReceipts = localStorage.getItem(STORAGE_KEYS.RECEIPTS);
 
       if (storedItems) {
         setItems(JSON.parse(storedItems));
@@ -99,11 +106,19 @@ export default function App() {
         setCategories(PRESET_CATEGORIES);
         localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(PRESET_CATEGORIES));
       }
+
+      if (storedReceipts) {
+        setReceipts(JSON.parse(storedReceipts));
+      } else {
+        setReceipts(INITIAL_RECEIPTS);
+        localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(INITIAL_RECEIPTS));
+      }
     } catch (e) {
       showToast('error', 'Browser storage failed to initialize. Reverting to session state.');
       setItems(INITIAL_ITEMS);
       setLogs(INITIAL_LOGS);
       setCategories(PRESET_CATEGORIES);
+      setReceipts(INITIAL_RECEIPTS);
     }
   }, []);
 
@@ -111,7 +126,8 @@ export default function App() {
   const saveStateToStorage = (
     updatedItems: InventoryItem[],
     updatedLogs: TransactionLog[],
-    updatedCategories?: string[]
+    updatedCategories?: string[],
+    updatedReceipts?: SaleReceipt[]
   ) => {
     try {
       localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(updatedItems));
@@ -119,6 +135,10 @@ export default function App() {
       localStorage.setItem(
         STORAGE_KEYS.CATEGORIES,
         JSON.stringify(updatedCategories || categories)
+      );
+      localStorage.setItem(
+        STORAGE_KEYS.RECEIPTS,
+        JSON.stringify(updatedReceipts || receipts)
       );
     } catch (e) {
       showToast('error', 'Storage exceeds quota limit. Image uploads may be too large.');
@@ -327,9 +347,19 @@ export default function App() {
     setItems(INITIAL_ITEMS);
     setLogs(INITIAL_LOGS);
     setCategories(PRESET_CATEGORIES);
+    setReceipts(INITIAL_RECEIPTS);
     setFocusedLogSku(undefined);
-    saveStateToStorage(INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES);
-    showToast('success', 'Sandbox replenished. Mock items and logs seeded.');
+    saveStateToStorage(INITIAL_ITEMS, INITIAL_LOGS, PRESET_CATEGORIES, INITIAL_RECEIPTS);
+    showToast('success', 'Sandbox replenished. Mock items, logs and receipts seeded.');
+  };
+
+  const handleClearReceipts = () => {
+    if (!window.confirm('Are you sure you want to delete all archived sales receipts?')) {
+      return;
+    }
+    setReceipts([]);
+    saveStateToStorage(items, logs, categories, []);
+    showToast('info', 'Sales receipts archive has been cleared.');
   };
 
   // 7. Recover from JSON backup import
@@ -463,7 +493,8 @@ export default function App() {
     cart: { itemId: string; quantity: number; soldPrice: number }[],
     customerName: string,
     notes: string,
-    invoiceRef: string
+    invoiceRef: string,
+    vatPercent: number
   ) => {
     const isoNow = new Date().toISOString();
     let updatedLogs = [...logs];
@@ -475,7 +506,7 @@ export default function App() {
         const remainingStock = Math.max(0, item.stock - saleLineItem.quantity);
         
         // Log individual item sales reduction in ledger
-        const logId = `tx-${Date.now()}-${item.itemId}`;
+        const logId = `tx-${Date.now()}-${item.id}`;
         const saleLog: TransactionLog = {
           id: logId,
           itemId: item.id,
@@ -498,9 +529,41 @@ export default function App() {
       return item;
     });
 
+    // Create a detailed sales invoice receipt
+    const receiptItems = cart.map(c => {
+      const match = items.find(i => i.id === c.itemId);
+      return {
+        itemId: c.itemId,
+        itemName: match ? match.name : 'Unknown Product',
+        sku: match ? match.sku : 'SKU-UNKNOWN',
+        quantity: c.quantity,
+        soldPrice: c.soldPrice
+      };
+    });
+
+    const subtotal = cart.reduce((sum, c) => sum + (c.quantity * c.soldPrice), 0);
+    const taxAmount = subtotal * (vatPercent / 100);
+    const finalTotal = subtotal + taxAmount;
+
+    const newReceipt: SaleReceipt = {
+      id: `rcpt-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      invoiceRef,
+      customerName: customerName || 'Walk-in Customer',
+      notes,
+      vatPercent,
+      subtotal,
+      taxAmount,
+      finalTotal,
+      items: receiptItems,
+      timestamp: isoNow
+    };
+
+    const updatedReceipts = [newReceipt, ...receipts];
+
     setItems(updatedItems);
     setLogs(updatedLogs);
-    saveStateToStorage(updatedItems, updatedLogs);
+    setReceipts(updatedReceipts);
+    saveStateToStorage(updatedItems, updatedLogs, categories, updatedReceipts);
     showToast('success', `Sale registered completely! Invoice ${invoiceRef} recorded.`);
   };
 
@@ -590,6 +653,20 @@ export default function App() {
               <nav className="flex flex-col gap-1">
                 <button
                   onClick={() => {
+                    setActiveTab('dashboard');
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-md transition-colors text-xs font-semibold select-none cursor-pointer ${
+                    activeTab === 'dashboard'
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/50'
+                      : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <BarChart3 size={15} />
+                  <span>Finance Dashboard</span>
+                </button>
+
+                <button
+                  onClick={() => {
                     setActiveTab('catalog');
                     setFocusedLogSku(undefined);
                   }}
@@ -617,6 +694,27 @@ export default function App() {
                     <ShoppingCart size={15} />
                     <span>Submit Sales</span>
                   </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('receipts');
+                  }}
+                  className={`flex items-center justify-between px-4 py-3 rounded-md transition-colors text-xs font-semibold select-none cursor-pointer ${
+                    activeTab === 'receipts'
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100/50'
+                      : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Receipt size={15} />
+                    <span>Sales Receipts</span>
+                  </div>
+                  {receipts.length > 0 && (
+                    <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-mono font-bold rounded">
+                      {receipts.length}
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -734,6 +832,16 @@ export default function App() {
             </section>
           )}
 
+          {/* TAB CONTENT: FINANCIAL ANALYTICS DASHBOARD */}
+          {activeTab === 'dashboard' && (
+            <div className="animate-fade-in">
+              <FinanceDashboard
+                items={items}
+                receipts={receipts}
+              />
+            </div>
+          )}
+
           {/* TAB CONTENT: CATALOGUE */}
           {activeTab === 'catalog' && (
             <div className="flex flex-col gap-6 animate-fade-in">
@@ -819,6 +927,16 @@ export default function App() {
               <SalesManager
                 items={items}
                 onSubmitSale={handleRecordSale}
+              />
+            </div>
+          )}
+
+          {/* TAB CONTENT: SALES RECEIPTS ARCHIVE */}
+          {activeTab === 'receipts' && (
+            <div className="animate-fade-in">
+              <ReceiptsManager
+                receipts={receipts}
+                onClearReceipts={handleClearReceipts}
               />
             </div>
           )}
