@@ -1,0 +1,6 @@
+{
+  "name": "Inventory & Stock Tracker",
+  "description": "A real-time web application to upload inventory items, manage categories, track stock level adjustments, view transactional history, and configure low-stock alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
