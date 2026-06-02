@@ -4,25 +4,20 @@ import path from 'path';
 import fs from 'fs';
 import {defineConfig} from 'vite';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(() => {
   return {
-    base: mode === 'production' ? './' : '/',
+    base: '/',
     plugins: [
       react(), 
       tailwindcss(),
       {
         name: 'serve-zip-endpoint',
         configureServer(server) {
-          server.middlewares.use('/api/download-zip', async (req, res) => {
+          server.middlewares.use('/api/download-zip', (req, res) => {
             try {
-              const AdmZip = (await import('adm-zip')).default;
-              const zip = new AdmZip();
-              
-              const readyPath = path.resolve(process.cwd(), 'ready_to_upload');
-              if (fs.existsSync(readyPath)) {
-                zip.addLocalFolder(readyPath);
-                const zipBuffer = zip.toBuffer();
-                
+              const zipPath = path.resolve(process.cwd(), 'ready_to_upload.zip');
+              if (fs.existsSync(zipPath)) {
+                const zipBuffer = fs.readFileSync(zipPath);
                 res.writeHead(200, {
                   'Content-Type': 'application/zip',
                   'Content-Disposition': 'attachment; filename=stockyard-hosting-bundle.zip',
@@ -31,12 +26,12 @@ export default defineConfig(({ mode }) => {
                 res.end(zipBuffer);
               } else {
                 res.writeHead(404, { 'Content-Type': 'text/plain' });
-                res.end('The ready_to_upload directory has not been populated yet. Please complete a build.');
+                res.end('The hosting ZIP bundle has not been compiled yet.');
               }
             } catch (err: any) {
               console.error(err);
               res.writeHead(500, { 'Content-Type': 'text/plain' });
-              res.end('Failed to generate ZIP archive: ' + err.message);
+              res.end('Failed to retrieve ZIP archive: ' + err.message);
             }
           });
         }
